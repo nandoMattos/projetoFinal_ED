@@ -34,7 +34,7 @@ typedef struct ListaMaquinas{
 
 // Funções Auxiliares 
 
-Fila *criaFila()    // Inicializa as Filas de cada Maquin
+Fila *criaFila()    // Inicializa a Fila da Maquina
 {
     Fila *aux = (Fila *)malloc(sizeof(Fila));
     if(aux == NULL){
@@ -50,7 +50,7 @@ Fila *criaFila()    // Inicializa as Filas de cada Maquin
 
 void insereListaMaquinas(ListaMaquinas **prim, Maquina maquina) // Insere uma máquina no inicio da Lista de Maquinas que o usuário escolheu
 {
-    ListaMaquinas *novo;
+    ListaMaquinas *novo = (ListaMaquinas *)malloc(sizeof(ListaMaquinas));
     novo->maquina = maquina;
     novo->prox = NULL;
     if(*prim == NULL){
@@ -70,6 +70,7 @@ Maquina inicializaMaquina(int modelo, Fila *cabecaFila) // Guarda as informaçõ
     switch (modelo) {
         case 1: aux.tempoEmpacotamento = tempo + 10; break;
         case 2: aux.tempoEmpacotamento = tempo + 16; break;
+        case 3: aux.tempoEmpacotamento = tempo + 0; break;      // Está como 0 porque depende do produto.   
         case 4: aux.tempoEmpacotamento = tempo + 25; break;
         case 5: aux.tempoEmpacotamento = tempo + 30; break;
         case 6: aux.tempoEmpacotamento = tempo + 35; break;
@@ -88,6 +89,14 @@ void imprimeListaMaquinas(ListaMaquinas *prim)  // Imprime a Lista de Maquinas p
     while (prim != NULL) {
         printf("Modelo: %d, tempo: %d\n", prim->maquina.modelo, prim->maquina.tempoEmpacotamento);
         prim = prim->prox;
+    }
+}
+
+void imprimeFila(Fila *cabecaFila)
+{
+    if (cabecaFila->primeiro == NULL){
+        printf("Fila vazia!\n");
+        return;
     }
 }
 
@@ -115,7 +124,6 @@ int compraMaquina(ListaMaquinas **prim, int tipoMaq, int qtde)  // Realiza as al
 
     insereListaMaquinas(&*prim, maquina);
 
-
     switch (tipoMaq) {
         case 1: return qtde * 100000; break;
         case 2: return qtde * 100000; break;
@@ -132,8 +140,8 @@ void insereLoteFila(ListaMaquinas **prim, int lote)
     ListaMaquinas *varredor = *prim;    // Varrer a ListaMaquinas e econtrar a(s) máquina(s) compatível(is)
     while (varredor != NULL) {
         if(lote == 1 && varredor->maquina.modelo != 1) {    // A coxinha (lote = 1) é compatível com todas as máquinas, menos com a FishPak (modelo = 1);
-            // printf("Modelo: %d\n", varredor->maquina.modelo);
-            insereListaMaquinas(&compativel, varredor->maquina);    // ** ta dando erro aqui, nao sei pq. O insereListaMaquinas funciona normal na main, mas aqui nao. 
+            insereListaMaquinas(&compativel, varredor->maquina);  
+            printf("Lista de Maquinas compativeis:\n");
             imprimeListaMaquinas(compativel);
         }
         varredor = varredor->prox;
@@ -163,6 +171,9 @@ int main() {
 
     }while (tipoMaq != 0);
 
+    printf("Lista Maquinas na main:\n");
+    imprimeListaMaquinas(prim);
+
     // Começo da simulação
     int lote = geraLote();
     // printf("Lote: %d\n", lote);
@@ -171,7 +182,6 @@ int main() {
 
 
 
-    // imprimeListaMaquinas(prim);
     // printf("Gasto: %d", gasto);
     return 0;
 
