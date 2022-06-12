@@ -141,11 +141,12 @@ void insereLoteFila(ListaMaquinas **prim, int lote)
     while (varredor != NULL) {
         if(lote == 1 && varredor->maquina.modelo != 1) {    // A coxinha (lote = 1) é compatível com todas as máquinas, menos com a FishPak (modelo = 1);
             insereListaMaquinas(&compativel, varredor->maquina);  
-            printf("Lista de Maquinas compativeis:\n");
-            imprimeListaMaquinas(compativel);
         }
         varredor = varredor->prox;
     }
+
+    printf("Lista de Maquinas compativeis para o lote %d:\n", lote);
+    imprimeListaMaquinas(compativel);
     
 
     // Fila *fila = verificaMelhorFila();
