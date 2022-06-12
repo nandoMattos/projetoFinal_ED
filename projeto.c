@@ -168,15 +168,10 @@ int main() {
         printf("Qual maquina deseja adicionar?\n");     
         printf("\n1-FishPak\t2-ChickenPak\t3-AllPak\t4-Plastific\t5-EnSacAll\t6-Universal\n0-Ja adicionei todas\n\n")   ;
         scanf("%d", &tipoMaq);
-        
+
         switch (tipoMaq) {
             case 0: break;
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-            case 6:{
+            case 1: case 2: case 3: case 4: case 5: case 6:{
                 printf("Quantas?\n");
                 scanf("%d", &qtde);
                 for (int i = 0; i < qtde; i++) gasto += compraMaquina(&prim, tipoMaq, qtde);
