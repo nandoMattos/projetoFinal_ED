@@ -138,9 +138,16 @@ void insereLoteFila(ListaMaquinas **prim, int lote)
 {
     ListaMaquinas *compativel = NULL;   // Criarei outra ListaMaquinas, para armazenar as maquina(s) compatível(is)
     ListaMaquinas *varredor = *prim;    // Varrer a ListaMaquinas e econtrar a(s) máquina(s) compatível(is)
+
+    // VERIFICAR QUAIS SÃO AS MAQUINAS COMPATÍVEIS
     while (varredor != NULL) {
-        if(lote == 1 && varredor->maquina.modelo != 1) {    // A coxinha (lote = 1) é compatível com todas as máquinas, menos com a FishPak (modelo = 1);
+        if (lote == 1 && varredor->maquina.modelo != 1) {    // A coxinha (lote = 1) é compatível com todas as máquinas, menos com a FishPak (modelo = 1);
             insereListaMaquinas(&compativel, varredor->maquina);  
+        } else if (lote == 2 && varredor->maquina.modelo != 2) {
+            insereListaMaquinas(&compativel, varredor->maquina);
+        } else if (lote == 3 && varredor->maquina.modelo != 1 && varredor->maquina.modelo != 2){
+            insereListaMaquinas(&compativel, varredor->maquina);
+            
         }
         varredor = varredor->prox;
     }
@@ -155,20 +162,24 @@ void insereLoteFila(ListaMaquinas **prim, int lote)
 int main() {
     ListaMaquinas *prim = NULL;
     int tipoMaq;
-    int gasto = 0;
-    do{     // Menu de opções (menos verboso que um Switch)
-
+    float gasto = 0;
+    int qtde;
+    do{    
         printf("Qual maquina deseja adicionar?\n");     
         printf("\n1-FishPak\t2-ChickenPak\t3-AllPak\t4-Plastific\t5-EnSacAll\t6-Universal\n0-Ja adicionei todas\n\n")   ;
         scanf("%d", &tipoMaq);
 
-        if(tipoMaq != 0){
-            int qtde;
+        switch (tipoMaq) {
+        case (1):{
             printf("Quantas?\n");
             scanf("%d", &qtde);
-
             for (int i = 0; i < qtde; i++) gasto += compraMaquina(&prim, tipoMaq, qtde);
-        } 
+        }break;
+        
+        default:
+            printf("Opcao invalida!\n");
+            break;
+        }
 
     }while (tipoMaq != 0);
 
@@ -176,14 +187,21 @@ int main() {
     imprimeListaMaquinas(prim);
 
     // Começo da simulação
-    int lote = geraLote();
+    // int lote = geraLote();
     // printf("Lote: %d\n", lote);
+    int lote = 2;
+    switch (lote) {
+    case 1: gasto += 0.80 ; break;
+    case 2: gasto += 0.70 ; break;
+    case 3: gasto += 0.40 ; break;
+    }
+
     insereLoteFila(&prim, lote);
 
 
 
 
-    // printf("Gasto: %d", gasto);
+    printf("Gasto: %.4f", gasto);
     return 0;
 
 }
