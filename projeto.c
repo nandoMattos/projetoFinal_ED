@@ -2,11 +2,13 @@
 #include<stdlib.h>
 
 int tempo = 0;
+float gasto = 0;
+
 
 typedef struct Lote{
     int tipoProduto;        // 1-Coxinha, 2-Peixe, 3-Almôndega
     float custoLote;
-    int tempoDet;
+    int instanteDet;        // Instante de deteriorização
 }Lote;
 
 typedef struct No{
@@ -32,7 +34,7 @@ typedef struct ListaMaquinas{
 }ListaMaquinas;
 
 
-// Funções Auxiliares 
+// Funções Base
 
 Fila *criaFila()    // Inicializa a Fila da Maquina
 {
@@ -46,20 +48,6 @@ Fila *criaFila()    // Inicializa a Fila da Maquina
     aux->ultimo = NULL;
     aux->qtde = 0;
     return aux;
-}
-
-void insereListaMaquinas(ListaMaquinas **prim, Maquina maquina) // Insere uma máquina no inicio da Lista de Maquinas que o usuário escolheu
-{
-    ListaMaquinas *novo = (ListaMaquinas *)malloc(sizeof(ListaMaquinas));
-    novo->maquina = maquina;
-    novo->prox = NULL;
-    if(*prim == NULL){
-        *prim = novo;
-        return;
-    }
-
-    novo->prox = *prim;
-    *prim = novo;
 }
 
 Maquina inicializaMaquina(int modelo, Fila *cabecaFila) // Guarda as informações das Maquinas (Modelo, Fila e Tempo de Empacotamento)
@@ -98,21 +86,116 @@ void imprimeFila(Fila *cabecaFila)
         printf("Fila vazia!\n");
         return;
     }
+
+    No* prim = cabecaFila->primeiro;
+    while (prim != NULL) {
+        printf("%d\n", prim->produto.tipoProduto);
+        prim = prim->prox;
+    }
+    
 }
 
-int geraLote() // Gera e retorna um lote aleatório dadas as probabilidades de cada produto (Coxinha - 50%, Peixe - 30%, Almôndega - 20%)
+Lote geraLote() // Gera e retorna um lote aleatório dadas as probabilidades de cada produto (Coxinha - 50%, Peixe - 30%, Almôndega - 20%)
 {
-    int aux = rand() % 10;
-    if (aux >= 0 && aux <= 4){    
-        return 1;     // 1- Coxinha
+    int numero = rand() % 10;
+    Lote aux; 
+    if (numero >= 0 && numero <= 4){    // (50%)    
+        aux.tipoProduto = 1;     // 1- Coxinha
+        aux.custoLote = 0.8;
+        aux.instanteDet = 0;
+        gasto += aux.custoLote;
+        return aux;
     }
 
-    if (aux >= 5 && aux <=7){
-        return 2;    // 2- Peixe
+    if (numero >= 5 && numero <=7){    // (30%) 
+        aux.tipoProduto = 2;     // 1- Coxinha
+        aux.custoLote = 0.7;
+        aux.instanteDet = 0;
+        gasto += aux.custoLote;
+        return aux;
     }
 
-    return 3;   // 3- Almôndega
+    aux.tipoProduto = 3; // 3-  Almôndega (20%)
+    aux.custoLote = 0.4;
+    aux.instanteDet = 0;
+    gasto += aux.custoLote;
+    return aux;
+}
+
+No *alocaNo(Lote lote)
+{
+    No *aux = (No *)malloc(sizeof(No));
+    if (aux == NULL) return NULL;
+
+    aux->produto = lote;
+    aux->prox = NULL;
+}
+
+void insereFila(Fila **cabecaFila, Lote lote)
+{
+    No *novo = alocaNo(lote);
+
+    if ((*cabecaFila)->primeiro == NULL){
+        (*cabecaFila)->primeiro = novo;
+        (*cabecaFila)->ultimo = novo;
+        (*cabecaFila)->qtde++;
+        return;
+    }
+
+    (*cabecaFila)->ultimo->prox = novo;
+    (*cabecaFila)->ultimo = novo;
+    (*cabecaFila)->qtde++;
+}
+
+// Funções Auxiliares 
+
+void insereListaMaquinas(ListaMaquinas **prim, Maquina maquina) // Insere uma máquina no inicio da Lista de Maquinas que o usuário escolheu
+{
+    ListaMaquinas *novo = (ListaMaquinas *)malloc(sizeof(ListaMaquinas));
+    novo->maquina = maquina;
+    novo->prox = NULL;
+    if(*prim == NULL){
+        *prim = novo;
+        return;
+    }
+
+    novo->prox = *prim;
+    *prim = novo;
+}
+
+Fila *verificaMenorFila(ListaMaquinas *compativel)
+{
+    // Se houver apenas uma máquina compatível, retorne a fila dessa máquina
+    if (compativel->prox == NULL){
+        return compativel->maquina.cabecaFila;
+    }
+
+    int menor;
+    menor = compativel->maquina.cabecaFila->qtde;
     
+    // Percorre a lista pela 1ª vez para achar a menor fila
+    ListaMaquinas *aux = compativel->prox;
+    while (aux != NULL) {
+        // printf("maquina atual: %d\n", aux->maquina.modelo);
+        // printf("menor: %d\n", menor);
+        if (aux->maquina.cabecaFila->qtde <= menor){
+            menor = aux->maquina.cabecaFila->qtde;
+        }
+        aux = aux->prox;
+    }
+
+    aux = compativel;
+    // Percorre a lista pela 2ª vez para retornar a menor fila
+    while (aux != NULL) {
+        // printf("maquina atual (inserir): %d\n", aux->maquina.modelo);
+        if(aux->maquina.cabecaFila->qtde == menor){
+            printf("foi pra maquina %d\n", aux->maquina.modelo);
+            return aux->maquina.cabecaFila;  
+        } 
+        aux = aux->prox;
+    }
+    
+
 }
 
 // Funções Principais:
@@ -125,8 +208,7 @@ int compraMaquina(ListaMaquinas **prim, int tipoMaq, int qtde)  // Realiza as al
     insereListaMaquinas(&*prim, maquina);
 
     switch (tipoMaq) {
-        case 1: return qtde * 100000; break;
-        case 2: return qtde * 100000; break;
+        case 1: case 2: return qtde * 100000; break;
         case 3: return qtde * 150000; break;
         case 4: return qtde * 60000; break;
         case 5: return qtde * 50000; break;
@@ -134,35 +216,37 @@ int compraMaquina(ListaMaquinas **prim, int tipoMaq, int qtde)  // Realiza as al
     }
 }
 
-void insereLoteFila(ListaMaquinas **prim, int lote)
+void insereLoteFila(ListaMaquinas **prim, Lote lote)
 {
-    ListaMaquinas *compativel = NULL;   // Criarei outra ListaMaquinas, para armazenar as maquina(s) compatível(is)
     ListaMaquinas *varredor = *prim;    // Varrer a ListaMaquinas e econtrar a(s) máquina(s) compatível(is)
 
+    ListaMaquinas *compativel = NULL;   
     // VERIFICAR QUAIS SÃO AS MAQUINAS COMPATÍVEIS
     while (varredor != NULL) {
-        if (lote == 1 && varredor->maquina.modelo != 1) {    // A coxinha (lote = 1) é compatível com todas as máquinas, menos com a FishPak (modelo = 1);
+        if (lote.tipoProduto == 1 && varredor->maquina.modelo != 1) {    // A coxinha (lote = 1) é compatível com todas as máquinas, menos com a FishPak (modelo = 1)
             insereListaMaquinas(&compativel, varredor->maquina);  
-        } else if (lote == 2 && varredor->maquina.modelo != 2) {
+        } else if (lote.tipoProduto == 2 && varredor->maquina.modelo != 2) {    // O peixe (lote = 2) é compatível com todas as máquinas, menos com a chickenPak (modelo = 2) 
             insereListaMaquinas(&compativel, varredor->maquina);
-        } else if (lote == 3 && varredor->maquina.modelo != 1 && varredor->maquina.modelo != 2){
+        } else if (lote.tipoProduto == 3 && varredor->maquina.modelo != 1 && varredor->maquina.modelo != 2){ // A almôndega (lote = 3) é compatível com todas as máquinas, menos com modelo = 1 e modelo = 2
             insereListaMaquinas(&compativel, varredor->maquina);
-            
         }
+
         varredor = varredor->prox;
     }
-
-    printf("Lista de Maquinas compativeis para o lote %d:\n", lote);
+    printf("Lista de Maquinas compativeis para o lote %d:\n", lote.tipoProduto);
     imprimeListaMaquinas(compativel);
-    
-
-    // Fila *fila = verificaMelhorFila();
+ 
+    if (compativel){
+        Fila *fila = verificaMenorFila(compativel);
+        insereFila(&fila, lote);
+        printf("Fila\n");
+        imprimeFila(fila);
+    } 
 }
 
 int main() {
     ListaMaquinas *prim = NULL;
     int tipoMaq;
-    float gasto = 0;
     int qtde;
     do{    
         printf("Qual maquina deseja adicionar?\n");     
@@ -184,20 +268,30 @@ int main() {
 
     }while (tipoMaq != 0);
 
-    printf("Lista Maquinas na main:\n");
-    imprimeListaMaquinas(prim);
+    // printf("Lista Maquinas na main:\n");
+    // imprimeListaMaquinas(prim);
 
     // Começo da simulação
-    // int lote = geraLote();
-    // printf("Lote: %d\n", lote);
-    int lote = 2;
-    switch (lote) {
-    case 1: gasto += 0.80 ; break;
-    case 2: gasto += 0.70 ; break;
-    case 3: gasto += 0.40 ; break;
-    }
 
-    insereLoteFila(&prim, lote);
+    int i;
+    Lote lote;
+    for (i = 0; i < 7; i++){
+        lote = geraLote();
+        insereLoteFila(&prim, lote);  
+    }  
+
+    // Lote lote, lote2, lote3;
+    // lote.custoLote = 0.8;
+    // lote.instanteDet = 0;
+    // lote.tipoProduto = 1;
+
+    // lote2.custoLote = 0.7;
+    // lote2.instanteDet = 0;
+    // lote2.tipoProduto = 2;
+
+    // lote3.custoLote = 0.4;
+    // lote3.instanteDet = 0;
+    // lote3.tipoProduto = 3;
 
 
 
