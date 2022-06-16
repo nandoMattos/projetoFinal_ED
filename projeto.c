@@ -1,6 +1,6 @@
 #include<stdio.h>
 #include<stdlib.h>
-
+// teste
 int tempo = 0;
 float gasto = 0;
 
